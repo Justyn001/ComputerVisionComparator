@@ -1,0 +1,23 @@
+# Domyślne wpisy Pythona
+__pycache__/
+*.py[codz]
+*$py.class
+*.so
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Ignoruj foldery IDE (PyCharm, VSCode)
+.idea/
+.vscode/
+
+# Ignoruj foldery z danymi i modele
+*.pt
+data/
+backup_data/
+
+# Ignoruj generowane raporty
+*.xml
+BenchmarkReport
