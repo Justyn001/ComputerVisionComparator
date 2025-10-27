@@ -12,19 +12,27 @@
 #     |-- (inny_runner.py)   # W przyszłości adapter dla modeli z TensorFlow Hub...
 
 import argparse
+import os
 import sys
 import pathlib
 from typing import List
 from runners.ultralytics_runner import predict_on_yolo
-from report_generator import generate_report
+from utils.download_data import download_data
+from utils.report_generator import generate_report
 
 def main(args: argparse.Namespace) -> None:
     path_to_videos = pathlib.Path.cwd() / "data"
 
+    if not path_to_videos.is_dir():
+        os.mkdir(path_to_videos)
+        download_data(path_to_videos)
+
     video_list: List[pathlib] = [video for video in list(path_to_videos.glob("*.mp4"))]
 
     predicted_time = predict_on_yolo(video_list, args.model)
+    print(predicted_time)
     generate_report(predicted_time)
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

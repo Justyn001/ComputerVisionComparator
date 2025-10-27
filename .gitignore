@@ -17,6 +17,8 @@ ENV/
 *.pt
 data/
 backup_data/
+models/
+Reports/
 
 # Ignoruj generowane raporty
 *.xml
