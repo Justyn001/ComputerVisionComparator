@@ -11,12 +11,24 @@
 #     |-- torchvision_runner.py  # "Adapter" dla modeli z Torchvision (SSD, Faster R-CNN)
 #     |-- (inny_runner.py)   # W przyszłości adapter dla modeli z TensorFlow Hub...
 
+# Rodzinę YOLO (super balans)
+#
+# FasterRCNN (skrajna dokładność)
+#
+# SSDLite (skrajna lekkość)
+#
+# SSD300 (stary standard)
+#
+# RetinaNet (nowoczesny "złoty środek")
+
+
 import argparse
 import os
 import sys
 import pathlib
 from typing import List
 from runners.ultralytics_runner import predict_on_yolo
+from runners.torchvision_runner import predict_on_pytorch
 from utils.download_data import download_data
 from utils.report_generator import generate_report
 
@@ -29,9 +41,10 @@ def main(args: argparse.Namespace) -> None:
 
     video_list: List[pathlib] = [video for video in list(path_to_videos.glob("*.mp4"))]
 
-    predicted_time = predict_on_yolo(video_list, args.model)
-    print(predicted_time)
-    generate_report(predicted_time)
+    predict = predict_on_pytorch(args.model, video_list)
+    print(predict)
+    #predicted_time = predict_on_yolo(video_list, args.model)
+    #generate_report(predicted_time)
 
 
 if __name__ == "__main__":
