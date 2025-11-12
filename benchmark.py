@@ -78,6 +78,8 @@ def main(args: argparse.Namespace) -> None:
             results[model] = predict_on_pytorch(video_list, model.lower())
     #results = predict_on_pytorch(video_list, args.model, results)
     #predicted_time = predict_on_yolo(video_list, args.model, results)
+
+    hardware 
     generate_report(results)
 
     print(results)
