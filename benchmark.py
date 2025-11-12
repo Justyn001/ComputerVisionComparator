@@ -26,7 +26,7 @@ import argparse
 import os
 import sys
 import pathlib
-from typing import List
+from typing import List, Dict
 from runners.ultralytics_runner import predict_on_yolo
 from runners.torchvision_runner import predict_on_pytorch
 from utils.download_data import download_data
@@ -41,11 +41,46 @@ def main(args: argparse.Namespace) -> None:
 
     video_list: List[pathlib] = [video for video in list(path_to_videos.glob("*.mp4"))]
 
-    predict = predict_on_pytorch(args.model, video_list)
-    print(predict)
-    #predicted_time = predict_on_yolo(video_list, args.model)
-    #generate_report(predicted_time)
+    results: Dict[str, Dict[str, Dict]] = {}
 
+    yolo_models = [
+        "yolov8n",
+        "yolov8s",
+        "yolov8m",
+        "yolov8l",
+        "yolov8x",
+        "yolo11n",
+        "yolo11s",
+        "yolo11m",
+        "yolo11l",
+        "yolo11x",
+        "yolov5n",
+        "yolov5s",
+        "yolov5m",
+        ]
+
+    pytorch_models = [
+        "fcos_resnet50_fpn",
+        "fasterrcnn_mobilenet_v3_large_320_fpn",
+        "fasterrcnn_mobilenet_v3_large_fpn",
+        "fasterrcnn_resnet50_fpn_v2",
+        "fasterrcnn_resnet50_fpn",
+        "retinanet_resnet50_fpn_v2",
+        "retinanet_resnet50_fpn",
+        "ssd300_vgg16",
+        "ssdlite320_mobilenet_v3_large",
+    ]
+
+    for model in args.model:
+        if model.lower() in yolo_models:
+            results[model] = predict_on_yolo(video_list, model.lower())
+        elif model.lower() in pytorch_models:
+            results[model] = predict_on_pytorch(video_list, model.lower())
+    #results = predict_on_pytorch(video_list, args.model, results)
+    #predicted_time = predict_on_yolo(video_list, args.model, results)
+    generate_report(results)
+
+    print(results)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

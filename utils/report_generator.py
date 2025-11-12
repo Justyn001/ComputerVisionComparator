@@ -14,7 +14,7 @@ def generate_report(report_data: Dict[str,
         for video_name, video_data in data.items():
             video_name_elem = ET.SubElement(model_name_elem, "Video_type", name=video_name)
             for title, value in video_data.items():
-                data_type_elem = ET.SubElement(video_name_elem, "Data", name=title)
+                data_type_elem = ET.SubElement(video_name_elem, "srata", name=title)
                 data_type_elem.text = f"{value:.2f}."
     tree = ET.ElementTree(root)
     ET.indent(tree)
