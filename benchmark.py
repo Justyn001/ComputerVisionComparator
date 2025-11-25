@@ -26,11 +26,14 @@ import argparse
 import os
 import sys
 import pathlib
-from typing import List, Dict
-from runners.ultralytics_runner import predict_on_yolo
-from runners.torchvision_runner import predict_on_pytorch
+from typing import List, Dict, Any
+from runners.ultralytics_runner import predict_on_yolo, validate_yolo
+from runners.torchvision_runner import predict_on_pytorch, validate_pytorch
 from utils.download_data import download_data
+from utils.hardware_info import get_hardware_info
 from utils.report_generator import generate_report
+from utils.plot_generator import generate_plots
+from utils.live_demo import  run_live_demo
 
 def main(args: argparse.Namespace) -> None:
     path_to_videos = pathlib.Path.cwd() / "data"
@@ -41,9 +44,12 @@ def main(args: argparse.Namespace) -> None:
 
     video_list: List[pathlib] = [video for video in list(path_to_videos.glob("*.mp4"))]
 
-    results: Dict[str, Dict[str, Dict]] = {}
+    path_coco = pathlib.Path.cwd() / "data" / "coco-128.v1i.coco" / "test"
+
+    results: Dict[str, Dict[str, Any]] = {}
 
     yolo_models = [
+        "yolov5nu",
         "yolov8n",
         "yolov8s",
         "yolov8m",
@@ -71,29 +77,67 @@ def main(args: argparse.Namespace) -> None:
         "ssdlite320_mobilenet_v3_large",
     ]
 
+    if args.demo:
+        if args.demo in yolo_models:
+            run_live_demo(args.demo,args.source)
+            return
+        print(f"❌ BŁĄD: Model '{args.demo}' nie jest wspierany w trybie demo.")
+    if args.all:
+        args.model = yolo_models + pytorch_models
+
     for model in args.model:
         if model.lower() in yolo_models:
             results[model] = predict_on_yolo(video_list, model.lower())
         elif model.lower() in pytorch_models:
             results[model] = predict_on_pytorch(video_list, model.lower())
+
+        if path_coco:
+            if model in yolo_models:
+                accuracy_metrics = validate_yolo(model)
+                results[model]["accuracy_benchmark"] = accuracy_metrics
+
+            elif model in pytorch_models:
+                accuracy_metrics = validate_pytorch(model, path_coco)
+                results[model]["accuracy_benchmark"] = accuracy_metrics
     #results = predict_on_pytorch(video_list, args.model, results)
     #predicted_time = predict_on_yolo(video_list, args.model, results)
 
-    hardware 
-    generate_report(results)
+    reports_dir = pathlib.Path.cwd() / "Reports"
 
-    print(results)
+    hardware = get_hardware_info()
+    generate_report(results, hardware, reports_dir)
+    generate_plots(results, reports_dir)
+
+    for key, value in results.items():
+        for klucz, wartosc in value.items():
+            print(f"{key} : {klucz} : {wartosc}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description= "CLI tool to benchmark object detection models' performance."
     )
-    parser.add_argument("-m",
+
+    group = parser.add_mutually_exclusive_group(required=True)
+
+    group.add_argument("-m",
                         "--model",
                         nargs="+",
                         type=str,
-                        required=True,
                         help="One or more model names to test (e.g., yolov8n.pt ssd_mobilenet_v2)")
+
+    group.add_argument("--all",
+                       action="store_true",
+                       help="Test ALL supported models automatically")
+
+    group.add_argument("--demo",
+                       type=str,
+                       metavar="MODEL",
+                       help="Visual demo mode (YOLO only)")
+
+    parser.add_argument("--source",
+                       type=str,
+                       default="0",
+                       help="Source for demo: '0' for webcam OR filename in data/ folder")
     try:
         args = parser.parse_args()
         main(args)
