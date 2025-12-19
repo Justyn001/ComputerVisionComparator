@@ -21,6 +21,7 @@
 #
 # RetinaNet (nowoczesny "złoty środek")
 
+# test gita na nowej fedorze
 
 import argparse
 import os
