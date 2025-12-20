@@ -21,7 +21,6 @@
 #
 # RetinaNet (nowoczesny "złoty środek")
 
-# test gita na nowej fedorze
 
 import argparse
 import os
@@ -82,7 +81,7 @@ def main(args: argparse.Namespace) -> None:
         if args.demo in yolo_models:
             run_live_demo(args.demo,args.source)
             return
-        print(f"❌ BŁĄD: Model '{args.demo}' nie jest wspierany w trybie demo.")
+        print(f"Error: Model '{args.demo}' is not supported in demo mode.")
     if args.all:
         args.model = yolo_models + pytorch_models
 
@@ -100,8 +99,6 @@ def main(args: argparse.Namespace) -> None:
             elif model in pytorch_models:
                 accuracy_metrics = validate_pytorch(model, path_coco)
                 results[model]["accuracy_benchmark"] = accuracy_metrics
-    #results = predict_on_pytorch(video_list, args.model, results)
-    #predicted_time = predict_on_yolo(video_list, args.model, results)
 
     reports_dir = pathlib.Path.cwd() / "Reports"
 

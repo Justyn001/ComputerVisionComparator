@@ -5,10 +5,7 @@ from typing import Dict, Any
 
 
 def generate_report(results: Dict[str, Dict[str, Any]], hardware_info: Dict[str, Any], output_dir: pathlib.Path):
-    """
-    Generuje raport XML w podanym folderze.
-    """
-    # Upewnij się, że folder istnieje
+
     output_dir.mkdir(parents=True, exist_ok=True)
 
     output_file = output_dir / "benchmark_report.xml"
@@ -17,7 +14,6 @@ def generate_report(results: Dict[str, Dict[str, Any]], hardware_info: Dict[str,
 
     root = ET.Element("ComputerVisionBenchmark")
 
-    # === 1. METADATA I SPRZĘT ===
     meta = ET.SubElement(root, "Metadata")
     ET.SubElement(meta, "Timestamp").text = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -38,7 +34,6 @@ def generate_report(results: Dict[str, Dict[str, Any]], hardware_info: Dict[str,
     # RAM
     ET.SubElement(hw, "RAM_GB").text = str(hardware_info.get('ram', {}).get('total_gb', 'N/A'))
 
-    # === 2. MODELE ===
     models_elem = ET.SubElement(root, "Models")
 
     best_speed_model = ("None", 0.0)
@@ -47,8 +42,6 @@ def generate_report(results: Dict[str, Dict[str, Any]], hardware_info: Dict[str,
     for model_name, data in results.items():
         m_elem = ET.SubElement(models_elem, "Model", name=model_name)
 
-        # --- A. OBSŁUGA DOKŁADNOŚCI (Accuracy) ---
-        # Szukamy konkretnego klucza 'accuracy_benchmark'
         acc_data = data.get("accuracy_benchmark")
         map50 = 0.0
 
@@ -56,28 +49,24 @@ def generate_report(results: Dict[str, Dict[str, Any]], hardware_info: Dict[str,
         if isinstance(acc_data, dict):
             map50 = acc_data.get('mAP50', 0.0)
             for k, v in acc_data.items():
-                # Usuwamy numpy.float64 z formatowania XML, bo to czasem psuje plik
                 val = v.item() if hasattr(v, 'item') else v
                 ET.SubElement(acc_elem, k).text = str(val)
         else:
             ET.SubElement(acc_elem, "Status").text = str(acc_data)
 
-        # --- B. OBSŁUGA WIDEO (Reszta kluczy) ---
         vid_elem = ET.SubElement(m_elem, "VideoBenchmark")
 
         avg_fps_sum = 0.0
         vid_count = 0
 
-        # Iterujemy po wszystkim w 'data'. Jeśli klucz to NIE jest accuracy, to jest to wideo.
         for key, val in data.items():
             if key == "accuracy_benchmark":
-                continue  # Pomiń, już obsłużyliśmy wyżej
+                continue  
 
-            # To jest wideo (np. 'traffic_cut')
             vid_name = key
             metrics = val
 
-            if not isinstance(metrics, dict): continue  # Zabezpieczenie
+            if not isinstance(metrics, dict): continue
 
             v_node = ET.SubElement(vid_elem, "Video", name=vid_name)
 
@@ -88,18 +77,15 @@ def generate_report(results: Dict[str, Dict[str, Any]], hardware_info: Dict[str,
             avg_fps_sum += metrics.get('system_fps', 0)
             vid_count += 1
 
-        # Średni FPS
         avg_model_fps = avg_fps_sum / vid_count if vid_count > 0 else 0.0
         ET.SubElement(m_elem, "AverageSystemFPS").text = f"{avg_model_fps:.2f}"
 
-        # --- Ranking ---
         if avg_model_fps > best_speed_model[1]:
             best_speed_model = (model_name, avg_model_fps)
 
         if map50 > best_accuracy_model[1]:
             best_accuracy_model = (model_name, map50)
 
-    # === 3. PODSUMOWANIE ===
     summary = ET.SubElement(root, "Summary")
 
     win_speed = ET.SubElement(summary, "Winner_Speed")
@@ -120,4 +106,4 @@ def generate_report(results: Dict[str, Dict[str, Any]], hardware_info: Dict[str,
     tree = ET.ElementTree(root)
     ET.indent(tree, space="  ", level=0)
     tree.write(output_file, encoding="utf-8", xml_declaration=True)
-    print(f"Raport zapisany pomyślnie.")
+    print(f"Report saved succesfully")

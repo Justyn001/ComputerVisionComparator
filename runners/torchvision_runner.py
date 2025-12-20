@@ -10,8 +10,7 @@ import json
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
 from utils.device_selection import select_device
 
-# === DODAJ TĘ LISTĘ NAD FUNKCJAMI ===
-# To jest "święta lista" klas, na których trenowane są modele Torchvision (COCO)
+
 COCO_INSTANCE_CATEGORY_NAMES = [
     '__background__', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
     'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'N/A', 'stop sign',
@@ -78,39 +77,29 @@ def predict_on_pytorch(video_list: List[pathlib],
             "video_fps" : round(video_fps, 2),
             "system_fps" : round(real_fps, 2)
         }
-    #results[model] = video_results
+
     return video_results
 
 
-# === PODMIEŃ TĘ FUNKCJĘ ===
+
 def get_coco_ground_truth(json_path: pathlib.Path) -> Dict[str, Dict[str, torch.Tensor]]:
-    """
-    Wczytuje plik COCO JSON i mapuje ID z Roboflow na ID PyTorcha po nazwach.
-    """
     with open(json_path, 'r') as f:
         data = json.load(f)
 
-    # 1. Mapa: ID_Roboflow -> Nazwa_Klasy
-    # np. {0: 'person', 1: 'bicycle'}
     roboflow_id_to_name = {cat['id']: cat['name'] for cat in data['categories']}
 
-    # 2. Mapa: Nazwa_Klasy -> ID_PyTorch
-    # np. {'person': 1, 'bicycle': 2}
     name_to_pytorch_id = {}
     for name in roboflow_id_to_name.values():
         try:
-            # Szukamy nazwy w oficjalnej liście COCO
-            # Roboflow czasem daje "aeroplane" zamiast "airplane", to prosty fix
             if name == "aeroplane": name = "airplane"
             if name == "motorbike": name = "motorcycle"
 
             pytorch_id = COCO_INSTANCE_CATEGORY_NAMES.index(name)
             name_to_pytorch_id[name] = pytorch_id
         except ValueError:
-            print(f"⚠️ UWAGA: Klasa '{name}' z datasetu nie istnieje w standardzie PyTorch COCO. Ignoruję.")
-            name_to_pytorch_id[name] = -1  # Oznacz jako do usunięcia
+            print(f"Class '{name}' from dataset do not exist in PyTorch COCO. Skipping.")
+            name_to_pytorch_id[name] = -1
 
-    # 3. Mapa obrazków
     img_id_to_filename = {img['id']: img['file_name'] for img in data['images']}
 
     ground_truth = {}
@@ -120,14 +109,11 @@ def get_coco_ground_truth(json_path: pathlib.Path) -> Dict[str, Dict[str, torch.
         filename = img_id_to_filename.get(image_id)
         if not filename: continue
 
-        # Pobierz ID kategorii z JSONa (Roboflow ID)
         json_cat_id = ann['category_id']
         category_name = roboflow_id_to_name.get(json_cat_id)
 
-        # Przetłumacz na PyTorch ID
         final_cat_id = name_to_pytorch_id.get(category_name, -1)
 
-        # Jeśli klasa nie pasuje do modelu (np. jakaś dodatkowa klasa), pomijamy
         if final_cat_id == -1:
             continue
 
@@ -135,10 +121,10 @@ def get_coco_ground_truth(json_path: pathlib.Path) -> Dict[str, Dict[str, torch.
             ground_truth[filename] = {"boxes": [], "labels": []}
 
         x, y, w, h = ann['bbox']
-        box = [x, y, x + w, y + h]  # xywh -> xyxy
+        box = [x, y, x + w, y + h]  
 
         ground_truth[filename]["boxes"].append(box)
-        ground_truth[filename]["labels"].append(final_cat_id)  # <-- Tu wrzucamy poprawne ID
+        ground_truth[filename]["labels"].append(final_cat_id)  
 
     final_gt = {}
     for fname, d in ground_truth.items():
@@ -148,7 +134,6 @@ def get_coco_ground_truth(json_path: pathlib.Path) -> Dict[str, Dict[str, torch.
                 "labels": torch.tensor(d["labels"], dtype=torch.int64)
             }
         else:
-            # Puste zdjęcie
             final_gt[fname] = {
                 "boxes": torch.empty((0, 4), dtype=torch.float32),
                 "labels": torch.empty((0,), dtype=torch.int64)
@@ -158,14 +143,13 @@ def get_coco_ground_truth(json_path: pathlib.Path) -> Dict[str, Dict[str, torch.
 
 
 def validate_pytorch(model_name: str, dataset_root: pathlib.Path) -> Dict[str, float]:
-    print(f"--- 🎯 Walidacja dokładności (PyTorch): {model_name} ---")
+    print(f" Validation PyTorch Accuracy: {model_name} ---")
 
     device = select_device()
 
-    # Znajdź plik JSON
     json_file = list(dataset_root.rglob("*_annotations.coco.json"))
     if not json_file:
-        print(f"    ❌ BŁĄD: Brak pliku JSON w {dataset_root}")
+        print(f"Error: No JSON file in {dataset_root}")
         return {}
 
     json_path = json_file[0]
@@ -179,23 +163,18 @@ def validate_pytorch(model_name: str, dataset_root: pathlib.Path) -> Dict[str, f
         model.to(device)
         model.eval()
     except Exception as e:
-        print(f"    ❌ BŁĄD modelu: {e}")
+        print(f"    ❌ Error Model: {e}")
         return {}
 
     metric = MeanAveragePrecision(iou_type="bbox")
 
-    # === ZMIANA 1: USUWAMY RESIZE ===
-    # Pozwalamy modelowi działać na pełnej rozdzielczości dla maksymalnej dokładności.
-    # Dzięki temu unikamy problemów z "psuciem" SSD300 przez wymuszanie 640px.
     transform = transforms.Compose([
         transforms.ToImage(),
         transforms.ToDtype(torch.float32, scale=True),
-        # transforms.Resize(...) <--- USUNIĘTE
     ])
 
     image_filenames = list(ground_truth_map.keys())
 
-    # Zmienna do debugowania (żeby wyświetlić info tylko raz)
     debug_printed = False
 
     with torch.no_grad():
@@ -206,37 +185,19 @@ def validate_pytorch(model_name: str, dataset_root: pathlib.Path) -> Dict[str, f
             img_original = cv2.imread(str(img_path))
             if img_original is None: continue
 
-            # Konwersja BGR -> RGB (Kluczowe!)
             img_rgb = cv2.cvtColor(img_original, cv2.COLOR_BGR2RGB)
 
             input_tensor = transform(img_rgb).to(device)
 
-            # Inferencja
             preds = model([input_tensor])
 
-            # === ZMIANA 2: USUNIĘTE SKALOWANIE ===
-            # Skoro nie zmieniamy rozmiaru wejściowego, nie musimy skalować wyników!
-            # Model zwraca współrzędne pasujące do oryginału.
-
-            # Przenosimy wyniki na CPU
             preds_cpu = [{k: v.cpu() for k, v in preds[0].items()}]
 
-            # Pobranie Ground Truth
             target = ground_truth_map[fname]
-
-            # === DEBUGOWANIE KLAS (Wyświetli się tylko dla pierwszego zdjęcia) ===
-            if not debug_printed and len(preds_cpu[0]['labels']) > 0 and len(target['labels']) > 0:
-                print(f"\n🔍 DEBUG KLAS (Sprawdź czy pasują!):")
-                print(f"   Model przewidział klasy: {preds_cpu[0]['labels'][:5].tolist()}")
-                print(f"   Prawdziwe etykiety to:   {target['labels'][:5].tolist()}")
-                debug_printed = True
-
-                # Jeśli widzisz np. Model: [1, 1] a Prawda: [0, 0],
-                # to znaczy, że musimy odejmować 1 od predykcji!
 
             metric.update(preds_cpu, [target])
 
-    print("    -> Obliczanie mAP...")
+    print("Calculating mAP...")
     result = metric.compute()
 
     final_metrics = {
@@ -245,5 +206,5 @@ def validate_pytorch(model_name: str, dataset_root: pathlib.Path) -> Dict[str, f
         "Recall": round(result['mar_100'].item(), 4),
     }
 
-    print(f"    ✅ Wyniki: {final_metrics}")
+    print(f"Results: {final_metrics}")
     return final_metrics
