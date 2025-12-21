@@ -163,7 +163,7 @@ def validate_pytorch(model_name: str, dataset_root: pathlib.Path) -> Dict[str, f
         model.to(device)
         model.eval()
     except Exception as e:
-        print(f"    ❌ Error Model: {e}")
+        print(f"Error Model: {e}")
         return {}
 
     metric = MeanAveragePrecision(iou_type="bbox")

@@ -1,26 +1,3 @@
-# ComputerVisionComparator/
-# |
-# |-- benchmark.py         # Główny skrypt (Menedżer)
-# |-- data/                # Folder z filmami użytkownika
-# |-- report.xml           # Wygenerowany raport
-# |
-# `-- runners/             # <-- TU JEST MAGIA
-#     |-- __init__.py
-#     |-- base_runner.py     # Definicja "interfejsu" dla każdego modelu
-#     |-- ultralytics_runner.py  # "Adapter" dla modeli YOLO (v5, v8, v11)
-#     |-- torchvision_runner.py  # "Adapter" dla modeli z Torchvision (SSD, Faster R-CNN)
-#     |-- (inny_runner.py)   # W przyszłości adapter dla modeli z TensorFlow Hub...
-
-# Rodzinę YOLO (super balans)
-#
-# FasterRCNN (skrajna dokładność)
-#
-# SSDLite (skrajna lekkość)
-#
-# SSD300 (stary standard)
-#
-# RetinaNet (nowoczesny "złoty środek")
-
 
 import argparse
 import os
@@ -50,6 +27,8 @@ def main(args: argparse.Namespace) -> None:
 
     yolo_models = [
         "yolov5nu",
+        "yolov5s",
+        "yolov5m",
         "yolov8n",
         "yolov8s",
         "yolov8m",
@@ -60,9 +39,6 @@ def main(args: argparse.Namespace) -> None:
         "yolo11m",
         "yolo11l",
         "yolo11x",
-        "yolov5n",
-        "yolov5s",
-        "yolov5m",
         ]
 
     pytorch_models = [

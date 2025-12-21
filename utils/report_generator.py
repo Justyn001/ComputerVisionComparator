@@ -102,7 +102,6 @@ def generate_report(results: Dict[str, Dict[str, Any]], hardware_info: Dict[str,
     else:
         win_acc.text = "No accuracy data"
 
-    # Zapis
     tree = ET.ElementTree(root)
     ET.indent(tree, space="  ", level=0)
     tree.write(output_file, encoding="utf-8", xml_declaration=True)
