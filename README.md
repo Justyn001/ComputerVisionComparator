@@ -9,7 +9,7 @@
 
 ---
 
-## 📖 About The Project
+## About The Project
 
 **ComputerVisionComparator** is a CLI engineering tool designed to empirically verify how Deep Learning models perform on specific consumer hardware. Unlike official server-side benchmarks, this tool measures:
 1.  **System FPS:** The real-world performance including video decoding, preprocessing, inference, and postprocessing.
@@ -22,7 +22,7 @@ It supports two major ecosystems using an **Adapter Pattern**:
 
 ---
 
-## ⚡ Key Features
+## Key Features
 
 * **Multi-Backend Support:** Seamlessly switch between YOLO and PyTorch models.
 * **Automated Data Management:** Automatically downloads test videos and the COCO validation dataset if missing.
@@ -32,7 +32,7 @@ It supports two major ecosystems using an **Adapter Pattern**:
 
 ---
 
-## 🖥️ Benchmark Environment
+## Benchmark Environment
 
 All benchmarks presented below were conducted on the following high-performance workstation:
 
@@ -46,7 +46,7 @@ All benchmarks presented below were conducted on the following high-performance 
 
 ---
 
-## 📊 Benchmark Results
+## Benchmark Results
 
 Here are the results generated directly by the tool on the hardware listed above.
 
@@ -69,7 +69,7 @@ Here are the results generated directly by the tool on the hardware listed above
 
 ---
 
-## 🛠️ Installation
+## Installation
 
 1.  **Clone the repository**
     ```bash
@@ -90,7 +90,7 @@ Here are the results generated directly by the tool on the hardware listed above
 
 ---
 
-## 🚀 Usage
+## Usage
 
 ### 1. Run Full Benchmark (All Models)
 To test every supported model (YOLO family + Torchvision models) and generate full reports:
@@ -131,10 +131,10 @@ ComputerVisionComparator/
 └── Reports/               # Output charts and XML logs
 ```
 
-## 📜 License
+## License
 This project is licensed under the **AGPL-3.0 License**. See the LICENSE file for details.
 
-## 👨‍💻 Author
+## Author
 Justyn Rojkowski - Machine Learning Engineer & Computer Science Student
 
 Project created as part of an Engineering Thesis: "Real-time object detection in a video stream using deep learning models".
