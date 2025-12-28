@@ -113,7 +113,7 @@ python benchmark.py --demo yolov11n --source 0
 # Video file
 python benchmark.py --demo yolov8m --source traffic_cut.mp4
 ```
-## 📂 Project Structure
+## Project Structure
 
 ```bash
 ComputerVisionComparator/
